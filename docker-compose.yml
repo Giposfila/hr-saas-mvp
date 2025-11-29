@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: hr_saas_postgres
+    environment:
+      POSTGRES_USER: hr_user
+      POSTGRES_PASSWORD: hr_password
+      POSTGRES_DB: hr_saas_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - hr_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: hr_saas_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - hr_network
+
+  minio:
+    image: minio/minio:latest
+    container_name: hr_saas_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - hr_network
+
+  # Backend будет запущен локально для разработки
+  # Раскомментируйте для продакшена
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: hr_saas_backend
+  #   environment:
+  #     DATABASE_URL: postgresql://hr_user:hr_password@postgres:5432/hr_saas_db
+  #     REDIS_URL: redis://redis:6379
+  #     MINIO_ENDPOINT: minio:9000
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #     - minio
+  #   networks:
+  #     - hr_network
+
+  # Frontend будет запущен локально для разработки
+  # Раскомментируйте для продакшена
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: hr_saas_frontend
+  #   environment:
+  #     NEXT_PUBLIC_API_URL: http://backend:8000
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - hr_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  hr_network:
+    driver: bridge
