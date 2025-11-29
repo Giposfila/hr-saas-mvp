@@ -1,62 +1,38 @@
-from typing import Optional, List
-from sqlmodel import Field, SQLModel, Relationship
-from app.models.base import BaseModel
+from sqlmodel import SQLModel, Field, Column, JSON
+from datetime import datetime
+from typing import Optional, List, Dict, Any
+from enum import Enum
 
 
-class Vacancy(BaseModel, table=True):
-    """Vacancy model"""
+class VacancyStatus(str, Enum):
+    DRAFT = "draft"
+    ACTIVE = "active"
+    PAUSED = "paused"
+    CLOSED = "closed"
+
+
+class Vacancy(SQLModel, table=True):
     __tablename__ = "vacancies"
-
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
     title: str = Field(index=True)
     description: Optional[str] = None
     requirements: Optional[str] = None
-    skills: Optional[str] = None  # JSON array as string
-    location: Optional[str] = None
-    salary_min: Optional[int] = None
-    salary_max: Optional[int] = None
-    employment_type: str = Field(default="full_time")  # full_time, part_time, contract
-    status: str = Field(default="active")  # active, closed, draft
     
-    # AI fields
-    embedding: Optional[str] = None  # Vector embedding as JSON
-    ai_generated_description: Optional[str] = None
+    # Structured data
+    skills: List[str] = Field(default=[], sa_column=Column(JSON))
+    required_experience_years: Optional[int] = None
+    location: Optional[str] = None
+    employment_type: Optional[str] = None  # full-time, part-time, contract
+    salary_min: Optional[int] = None
+    salary_max: Optional[int] = None
     
-    # Relations
-    user_id: int = Field(foreign_key="users.id")
-
-
-class VacancyCreate(SQLModel):
-    title: str
-    description: Optional[str] = None
-    requirements: Optional[str] = None
-    skills: Optional[List[str]] = None
-    location: Optional[str] = None
-    salary_min: Optional[int] = None
-    salary_max: Optional[int] = None
-    employment_type: str = "full_time"
-
-
-class VacancyRead(SQLModel):
-    id: int
-    title: str
-    description: Optional[str] = None
-    requirements: Optional[str] = None
-    skills: Optional[str] = None
-    location: Optional[str] = None
-    salary_min: Optional[int] = None
-    salary_max: Optional[int] = None
-    employment_type: str
-    status: str
-    user_id: int
+    # AI Generated
     ai_generated_description: Optional[str] = None
-
-
-class VacancyUpdate(SQLModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    requirements: Optional[str] = None
-    skills: Optional[List[str]] = None
-    location: Optional[str] = None
-    salary_min: Optional[int] = None
-    salary_max: Optional[int] = None
-    status: Optional[str] = None
+    embedding: Optional[List[float]] = Field(default=None, sa_column=Column(JSON))
+    
+    # Metadata
+    status: VacancyStatus = Field(default=VacancyStatus.DRAFT)
+    created_by: int = Field(foreign_key="users.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)

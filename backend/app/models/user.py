@@ -1,36 +1,24 @@
+from sqlmodel import SQLModel, Field
+from datetime import datetime
 from typing import Optional
-from sqlmodel import Field, SQLModel
-from app.models.base import BaseModel
+from enum import Enum
 
 
-class User(BaseModel, table=True):
-    """User model"""
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    HR_DIRECTOR = "hr_director"
+    HR_MANAGER = "hr_manager"
+    RECRUITER = "recruiter"
+
+
+class User(SQLModel, table=True):
     __tablename__ = "users"
-
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(unique=True, index=True)
     hashed_password: str
     full_name: str
-    role: str = Field(default="recruiter")  # recruiter, hr_manager, hr_director, admin
+    role: UserRole = Field(default=UserRole.RECRUITER)
     is_active: bool = Field(default=True)
-    avatar_url: Optional[str] = None
-
-
-class UserCreate(SQLModel):
-    email: str
-    password: str
-    full_name: str
-    role: str = "recruiter"
-
-
-class UserRead(SQLModel):
-    id: int
-    email: str
-    full_name: str
-    role: str
-    is_active: bool
-    avatar_url: Optional[str] = None
-
-
-class UserUpdate(SQLModel):
-    full_name: Optional[str] = None
-    avatar_url: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
